@@ -1,60 +1,55 @@
-const fs = require("fs").promises;
-const path = require("path");
-const { v4 } = require("uuid");
+const { Schema, model } = require("mongoose");
+const Joi = require("joi");
 
-const contactPath = path.join(__dirname, "contacts.json");
+const contactSchema = Schema(
+  {
+    name: {
+      type: String,
+      required: [true, "Set name for contact"],
+      unique: true,
+      minlenght: 2,
+    },
+    email: {
+      type: String,
+      unique: true,
+      required: [true, "Set email for contact"],
+    },
+    phone: {
+      type: String,
+      unique: true,
+      required: [true, "Set phone for contact"],
+      minlenght: 8,
+    },
+    favorite: {
+      type: Boolean,
+      default: false,
+    },
+  },
+  { versionKey: false, timestamp: true }
+);
 
-// Функция для вывода всего списка контактов
-const listContacts = async () => {
-  const dataString = await fs.readFile(contactPath);
-  const data = JSON.parse(dataString);
-  return data;
-};
+const joiSchema = Joi.object({
+  name: Joi.string().min(2).max(25).required(),
+  email: Joi.string()
+    .email({
+      minDomainSegments: 2,
+      tlds: { allow: ["com", "net", "uk", "mail"] },
+    })
+    .required(),
+  phone: Joi.string()
+    .pattern(/^\((\d{3})\)[ ](\d{3})[-](\d{4})$/)
+    .required(),
+  favorite: Joi.bool(),
+});
 
-// Функция для поиска контакта по id
-const getContactById = async (id) => {
-  const allContacts = await listContacts();
-  const contanct = allContacts.find((contanct) => contanct.id === id);
-  return contanct || null;
-};
+const joiFavoriteSchema = Joi.object({
+  favorite: Joi.bool().required(),
+});
 
-// Функция добавления нового контакта
-const addContact = async (body) => {
-  const allContacts = await listContacts();
-  const newContacts = { id: v4(), ...body };
-  allContacts.push(newContacts);
-  await fs.writeFile(contactPath, JSON.stringify(allContacts));
-  return newContacts;
-};
-
-// Функция обновления по контакта по id
-const updateById = async (id, data) => {
-  const allContacts = await listContacts();
-  const index = allContacts.findIndex((contanct) => contanct.id === id);
-  if (index === -1) {
-    return null;
-  }
-  allContacts[index] = { id, ...data };
-  await fs.writeFile(contactPath, JSON.stringify(allContacts));
-  return allContacts[index];
-};
-
-// Функция удаления контакта по id
-const removeContact = async (id) => {
-  const allContacts = await listContacts();
-  const index = allContacts.findIndex((contanct) => contanct.id === id);
-  const deletedcontanct = allContacts[index];
-  if (index !== -1) {
-    allContacts.splice(index, 1);
-    await fs.writeFile(contactPath, JSON.stringify(allContacts));
-  }
-  return deletedcontanct || null;
-};
+const Contact = model("contact", contactSchema);
 
 module.exports = {
-  listContacts,
-  getContactById,
-  addContact,
-  updateById,
-  removeContact,
+  Contact,
+  joiSchema,
+  joiFavoriteSchema,
 };
