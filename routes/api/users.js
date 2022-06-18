@@ -1,6 +1,11 @@
 const express = require("express");
 
-const { auth, validation, controllerWrapper } = require("../../middleware");
+const {
+  upload,
+  auth,
+  validation,
+  controllerWrapper,
+} = require("../../middleware");
 const { users: ctrl } = require("../../controllers");
 const { joiSubscriptionSchema } = require("../../models/user");
 
@@ -13,6 +18,13 @@ router.patch(
   auth,
   validation(joiSubscriptionSchema),
   controllerWrapper(ctrl.updateSubscription)
+);
+
+router.patch(
+  "/avatars",
+  auth,
+  upload.single("avatar"),
+  controllerWrapper(ctrl.updateAvatar)
 );
 
 module.exports = router;
