@@ -1,6 +1,6 @@
 const bcrypt = require("bcryptjs");
 const { Conflict } = require("http-errors");
-
+const gravatar = require("gravatar");
 const { User } = require("../../models");
 
 const signup = async (req, res) => {
@@ -11,15 +11,15 @@ const signup = async (req, res) => {
   }
 
   const hashPassword = bcrypt.hashSync(password, bcrypt.genSaltSync(10));
-
+  const avatarUrl = gravatar.url(email);
   // eslint-disable-next-line no-unused-vars
   const newUser = await User.create({
     name,
     email,
     password: hashPassword,
     subscription,
+    avatarUrl,
   });
-
 
   res.status(201).json({
     status: "success",
@@ -29,6 +29,7 @@ const signup = async (req, res) => {
         name,
         email,
         subscription,
+        avatarUrl,
       },
     },
   });
